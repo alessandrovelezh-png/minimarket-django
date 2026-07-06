@@ -1,0 +1,45 @@
+{% extends "catalogo/base.html" %}
+
+{% block title %}Nuestro Catálogo - Minimarket{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <h3>Categorías</h3>
+        <div class="list-group">
+            <a href="{% url 'catalogo:lista_productos' %}" 
+               class="list-group-item list-group-item-action {% if not categoria %}active{% endif %}">
+               Todas
+            </a>
+            {% for cat in categorias %}
+            <a href="{% url 'catalogo:lista_por_categoria' cat.id %}" 
+               class="list-group-item list-group-item-action {% if categoria.id == cat.id %}active{% endif %}">
+                {{ cat.nombre }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <h2>{% if categoria %}{{ categoria.nombre }}{% else %}Productos{% endif %}</h2>
+        <div class="row">
+            {% for producto in productos %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100">
+                    {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ producto.nombre }}</h5>
+                        <p class="card-text text-success font-weight-bold">S/ {{ producto.precio }}</p>
+                        <a href="{% url 'catalogo:detalle_producto' producto.id %}" class="btn btn-primary">Ver detalle</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p>No hay productos disponibles en esta categoría.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

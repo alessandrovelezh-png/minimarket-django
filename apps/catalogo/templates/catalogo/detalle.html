@@ -1,0 +1,52 @@
+{% extends "catalogo/base.html" %}
+
+{% block title %}{{ producto.nombre }} - Minimarket{% endblock %}
+
+{% block content %}
+<div class="row mt-5">
+    <div class="col-md-6">
+        {% if producto.imagen %}
+        <img src="{{ producto.imagen.url }}" class="img-fluid rounded" alt="{{ producto.nombre }}">
+        {% endif %}
+    </div>
+    <div class="col-md-6">
+        <h1>{{ producto.nombre }}</h1>
+        <p class="badge bg-secondary">{{ producto.categoria.nombre }}</p>
+        <hr>
+        <p class="lead">{{ producto.descripcion }}</p>
+        <h3 class="text-success">Precio: S/ {{ producto.precio }}</h3>
+        <p><strong>Stock disponible:</strong> {{ producto.stock_disponible }} unidades</p>
+        
+        <div class="mt-4">
+            {% if cantidad_en_carrito == 0 %}
+                <a href="{% url 'pedidos:agregar_carrito' producto.id %}" class="btn btn-success">
+                    Agregar al carrito
+                </a>
+            {% else %}
+                <div class="input-group mb-3" style="max-width: 220px;">
+                    
+                    {% if cantidad_en_carrito == 1 %}
+                        <a href="{% url 'pedidos:eliminar_carrito' producto.id %}" class="btn btn-outline-danger" title="Eliminar del carrito">
+                            🗑️
+                        </a>
+                    {% else %}
+                        <a href="{% url 'pedidos:restar_carrito' producto.id %}" class="btn btn-outline-secondary">
+                            -
+                        </a>
+                    {% endif %}
+
+                    <span class="form-control text-center bg-light fw-bold" style="cursor: default;">
+                        {{ cantidad_en_carrito }}
+                    </span>
+
+                    <a href="{% url 'pedidos:agregar_carrito' producto.id %}" class="btn btn-outline-secondary">
+                        +
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <a href="{% url 'catalogo:lista_productos' %}" class="btn btn-outline-secondary mt-3">Volver al catálogo</a>
+    </div>
+</div>
+{% endblock %}

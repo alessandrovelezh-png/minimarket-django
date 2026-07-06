@@ -1,0 +1,10 @@
+{% extends "catalogo/base.html" %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h1 class="text-success">¡Pedido Confirmado!</h1>
+    <p class="lead">Tu pedido ha sido procesado exitosamente y el stock ha sido actualizado.</p>
+    <p>Te esperamos en nuestro minimarket para el recojo.</p>
+    <a href="{% url 'catalogo:lista_productos' %}" class="btn btn-primary mt-3">Seguir Comprando</a>
+</div>
+{% endblock %}

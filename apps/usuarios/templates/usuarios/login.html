@@ -1,0 +1,17 @@
+{% extends "catalogo/base.html" %}
+{% block title %}Iniciar Sesión{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 card p-4 mt-5 shadow-sm">
+        <h2 class="text-center mb-4">Iniciar Sesión</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success w-100 mt-3">Ingresar</button>
+        </form>
+        <div class="text-center mt-3">
+            <a href="{% url 'usuarios:registro' %}">¿No tienes cuenta? Regístrate aquí</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "catalogo/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4"><i class="fa-solid fa-credit-card"></i> Checkout Seguros</h2>
+
+    {% if error_mensaje %}
+    <div class="alert alert-danger" role="alert">
+        {{ error_mensaje }}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" action="{% url 'pedidos:checkout' %}" novalidate>
+                        {% csrf_token %}
+                        
+                        <h4 class="mb-3 text-primary">1. Modalidad de Entrega</h4>
+                        <div class="mb-4 p-3 border rounded bg-light">
+                            <div id="opciones_entrega" class="mt-2 mb-3">
+                                {% for radio in form.tipo_entrega %}
+                                <div class="form-check fs-5 mb-2">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}" style="cursor: pointer;">
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div id="caja_direccion" class="mt-3" style="display: none;">
+                                <label class="form-label fw-bold">Dirección de Delivery (S/ 10.00):</label>
+                                {{ form.direccion_delivery }}
+                            </div>
+                            
+                            <div id="caja_franja" class="mt-3">
+                                <label class="form-label fw-bold">Franja de Recojo en Tienda (Gratis):</label>
+                                {{ form.franja_recojo }}
+                            </div>
+                        </div>
+                    
+                        <h4 class="mb-3 text-primary">2. Método de Pago</h4>
+                        <div class="mb-4">
+                            {{ form.metodo_pago }}
+                        </div>
+                    
+                        <button type="submit" class="btn btn-success w-100 fs-5 mt-4">
+                            <i class="fa-solid fa-check"></i> Confirmar y Pagar (Total: S/ <span id="total_visual_btn">{{ total_general|floatformat:2 }}</span>)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Resumen de tu Pedido</h5>
+                    
+                    <div class="d-flex justify-content-between fs-5 fw-bold text-success mb-2">
+                        <span>Total a Pagar:</span>
+                        <span>S/ <span id="resumen_total_visual">{{ total_general|floatformat:2 }}</span></span>
+                    </div>
+
+                    <hr>
+                    <div class="alert alert-info text-center p-2 mb-0" role="alert">
+                        <small>
+                            <i class="fa-solid fa-coins"></i> Referencia en Dólares:<br>
+                            <strong>${{ total_dolares }} USD</strong><br>
+                            (Sujeto a tipo de cambio del banco)
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3 text-center">
+                <a href="{% url 'pedidos:ver_carrito' %}" class="text-decoration-none">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Carrito
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Capturamos los elementos del DOM
+        const radiosEntrega = document.querySelectorAll('input[name="tipo_entrega"]');
+        const cajaDireccion = document.getElementById('caja_direccion');
+        const cajaFranja = document.getElementById('caja_franja');
+        
+        // Elementos numéricos
+        const totalVisualBtn = document.getElementById('total_visual_btn');
+        const resumenTotalVisual = document.getElementById('resumen_total_visual');
+        
+        // 2. Obtenemos el total base convirtiendo el texto a decimal seguro
+        const totalBase = parseFloat("{{ total_general }}".replace(',', '.'));
+        const costoDelivery = 10.00;
+    
+        // 3. Función principal que actualiza la pantalla
+        function actualizarInterfaz() {
+            // Buscamos cuál radio button está seleccionado (por defecto suele ser el primero)
+            let seleccionado = document.querySelector('input[name="tipo_entrega"]:checked');
+            let modalidad = seleccionado ? seleccionado.value : 'RECOJO';
+            
+            let nuevoTotal = totalBase;
+    
+            if (modalidad === 'DELIVERY') {
+                // Mostrar dirección, ocultar franja y sumar el costo
+                cajaDireccion.style.display = 'block';
+                cajaFranja.style.display = 'none';
+                nuevoTotal = totalBase + costoDelivery;
+            } else {
+                // Mostrar franja, ocultar dirección y mantener el costo base
+                cajaDireccion.style.display = 'none';
+                cajaFranja.style.display = 'block';
+            }
+    
+            // Formateamos a 2 decimales y aplicamos a los dos textos de la pantalla
+            const totalFormateado = nuevoTotal.toFixed(2);
+            if (totalVisualBtn) totalVisualBtn.innerText = totalFormateado;
+            if (resumenTotalVisual) resumenTotalVisual.innerText = totalFormateado;
+        }
+    
+        // 4. Asignamos el evento 'change' a cada opción (Delivery/Recojo)
+        radiosEntrega.forEach(radio => {
+            radio.addEventListener('change', actualizarInterfaz);
+        });
+    
+        // 5. Ejecutamos la función una vez al cargar la página por precaución
+        actualizarInterfaz();
+    });
+</script>
+{% endblock %}

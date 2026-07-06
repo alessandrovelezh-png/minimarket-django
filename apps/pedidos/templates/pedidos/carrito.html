@@ -1,0 +1,54 @@
+{% extends "catalogo/base.html" %}
+
+{% block title %}Mi Carrito - Minimarket{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Resumen de Compra</h2>
+{% if items_carrito %}
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Producto</th>
+                <th>Precio Unitario</th>
+                <th class="text-center">Cantidad</th>
+                <th>Subtotal</th>
+                <th class="text-center">Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items_carrito %}
+            <tr>
+                <td>{{ item.nombre }}</td>
+                <td>S/ {{ item.precio }}</td>
+                <td class="text-center">
+                    <a href="{% url 'pedidos:restar_carrito' item.producto_id %}" class="btn btn-sm btn-outline-secondary">-</a>
+                    <span class="mx-2">{{ item.cantidad }}</span>
+                    <a href="{% url 'pedidos:agregar_carrito' item.producto_id %}" class="btn btn-sm btn-outline-secondary">+</a>
+                </td>
+                <td class="text-success font-weight-bold">S/ {{ item.subtotal }}</td>
+                <td class="text-center">
+                    <a href="{% url 'pedidos:eliminar_carrito' item.producto_id %}" class="btn btn-danger btn-sm">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="table-active">
+                <td colspan="3" class="text-end"><strong>Total General:</strong></td>
+                <td colspan="2"><strong>S/ {{ total_general }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% url 'catalogo:lista_productos' %}" class="btn btn-outline-secondary btn-lg">
+            Volver al Catálogo
+        </a>
+        
+        <a href="{% url 'pedidos:checkout' %}" class="btn btn-success btn-lg">
+            Proceder al Pago
+        </a>
+    </div>
+{% else %}
+    <div class="alert alert-info">Tu carrito está vacío. <a href="{% url 'catalogo:lista_productos' %}">Volver a la tienda</a>.</div>
+{% endif %}
+{% endblock %}
