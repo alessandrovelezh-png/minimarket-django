@@ -69,8 +69,8 @@
                     <div class="alert alert-info text-center p-2 mb-0" role="alert">
                         <small>
                             <i class="fa-solid fa-coins"></i> Referencia en Dólares:<br>
-                            <strong>${{ total_dolares }} USD</strong><br>
-                            (Sujeto a tipo de cambio del banco)
+                            <strong>$ <span id="resumen_dolares">0.00</span> USD</strong><br>
+                            (Sujeto a tipo de cambio)
                         </small>
                     </div>
                 </div>
@@ -95,9 +95,11 @@
         // Elementos numéricos
         const totalVisualBtn = document.getElementById('total_visual_btn');
         const resumenTotalVisual = document.getElementById('resumen_total_visual');
+        const resumenDolares = document.getElementById('resumen_dolares'); // NUEVO: Capturamos el span de dólares
         
-        // 2. Obtenemos el total base convirtiendo el texto a decimal seguro
+        // 2. Obtenemos las bases matemáticas de Python
         const totalBase = parseFloat("{{ total_general }}".replace(',', '.'));
+        const tipoCambio = parseFloat("{{ tipo_cambio|default:0 }}".replace(',', '.')); // NUEVO: Tasa de cambio de la API
         const costoDelivery = 10.00;
     
         // 3. Función principal que actualiza la pantalla
@@ -119,10 +121,15 @@
                 cajaFranja.style.display = 'block';
             }
     
-            // Formateamos a 2 decimales y aplicamos a los dos textos de la pantalla
+            // Formateamos a 2 decimales y aplicamos a los dos textos de soles
             const totalFormateado = nuevoTotal.toFixed(2);
             if (totalVisualBtn) totalVisualBtn.innerText = totalFormateado;
             if (resumenTotalVisual) resumenTotalVisual.innerText = totalFormateado;
+            
+            // NUEVO: CONVERSIÓN DINÁMICA A DÓLARES EN TIEMPO REAL
+            if (tipoCambio > 0 && resumenDolares) {
+                resumenDolares.innerText = (nuevoTotal * tipoCambio).toFixed(2);
+            }
         }
     
         // 4. Asignamos el evento 'change' a cada opción (Delivery/Recojo)

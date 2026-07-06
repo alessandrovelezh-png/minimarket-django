@@ -18,6 +18,7 @@ class Pedido(models.Model):
         ('PREPARANDO', 'En Preparación'),
         ('LISTO', 'Listo para Recojo/Envío'),
         ('ENTREGADO', 'Entregado'),
+        ('CANCELADO', 'Cancelado (No Show)'), # <-- NUEVO ESTADO
     ]
     
     OPCIONES_FRANJA = [
@@ -65,7 +66,10 @@ class Pago(models.Model):
         ('Pago en Línea Segura', (
             ('STRIPE_CARD', 'Tarjeta de Crédito / Débito (Stripe)'),
             ('STRIPE_WALLET', 'Google Pay / Apple Pay / Link (Stripe)'),
-            ('LOCAL_YAPE', 'Yape / Plin (Simulación Online)'),
+        )),
+        ('Billeteras Digitales (Simulación)', (
+            ('LOCAL_YAPE', 'Yape (Simulación QR/OTP)'), # <-- SEPARADOS
+            ('LOCAL_PLIN', 'Plin (Simulación QR/OTP)'),
         )),
         ('Pago Contra Entrega (Físico)', (
             ('CONTRA_EFECTIVO', 'Pago en Efectivo'),

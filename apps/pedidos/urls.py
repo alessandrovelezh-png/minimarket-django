@@ -13,4 +13,10 @@ urlpatterns = [
     # Nuevas rutas de Stripe
     path('stripe/success/', views.stripe_success, name='stripe_success'),
     path('stripe/cancel/', views.stripe_cancel, name='stripe_cancel'),
+    # NUEVO
+    path('billetera/<int:pedido_id>/', views.simular_billetera, name='simular_billetera'),
+    path('cajero/', views.panel_cajero, name='panel_cajero'),
+    path('repartidor/', views.panel_repartidor, name='panel_repartidor'),
+    path('accion/<int:pedido_id>/<str:accion>/', views.accion_pedido, name='accion_pedido'),
+    path('ticket/<int:pedido_id>/', views.descargar_ticket, name='descargar_ticket'), # generacion de ticket
 ]
