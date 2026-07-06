@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3-y5)*l4g3541wzcmom8dhb2@y=j1fpj)96_j7#wu#+i@0#vl='
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -139,5 +143,5 @@ LOGOUT_REDIRECT_URL = 'catalogo:lista_productos' # A donde va al cerrar sesión
 # Tiempo de inactividad permitido para el carrito en segundos (Pon 10 para probar, luego cámbialo a 900)
 CARRITO_TIEMPO_VIDA = 900
 # CONFIGURACIÓN DE STRIPE
-STRIPE_PUBLIC_KEY = 'pk_test_51Tkpd4E8lq5RChCCVKCi9vVXs9DW4nHhzgLaXJMno6305Tz4xuc9FsSOZvkQOvEjyiCVvGQxIfLb8vG8O5U4ymdE00KzyYKC8z'
-STRIPE_SECRET_KEY = 'sk_test_51Tkpd4E8lq5RChCChkxJw5g4kwaBQjxxAOBAYNOkAGHKB2SOV5UvCN2pa6I6QePB8amucQePu2V4kES4R4dEyLBI00B7x6IUTv'
+STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
