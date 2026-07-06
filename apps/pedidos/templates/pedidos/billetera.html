@@ -1,0 +1,53 @@
+{% extends "catalogo/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-body p-5 text-center">
+                    
+                    <div class="mb-4">
+                        <i class="fa-solid fa-mobile-screen-button text-primary" style="font-size: 4rem;"></i>
+                    </div>
+
+                    <h3 class="mb-3">Validación de Pago</h3>
+                    <p class="text-muted">Estás pagando con <strong>{{ pago.get_metodo_pago_display_name }}</strong></p>
+                    
+                    <h2 class="text-success mb-4">S/ {{ pago.monto_pago|floatformat:2 }}</h2>
+
+                    <div class="alert alert-info small text-start">
+                        <i class="fa-solid fa-circle-info"></i> <strong>Modo Simulación:</strong> Revisa tu aplicación móvil imaginaria e ingresa cualquier código de 6 dígitos (ej. 123456) para aprobar la transacción.
+                    </div>
+
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Código de Aprobación (OTP):</label>
+                            <input type="text" name="codigo_otp" class="form-control form-control-lg text-center fw-bold tracking-widest" 
+                                   maxlength="6" placeholder="000000" required autofocus>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 btn-lg rounded-pill">
+                            <i class="fa-solid fa-shield-check"></i> Confirmar Pago
+                        </button>
+                    </form>
+
+                    <div class="mt-4">
+                        <a href="{% url 'catalogo:lista_productos' %}" class="text-decoration-none text-danger small">
+                            Cancelar y volver al inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "catalogo/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fa-solid fa-motorcycle text-danger"></i> Panel Repartidor (Delivery)</h2>
+    </div>
+
+    <div class="row">
+        {% for pedido in pedidos %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0 border-top border-4 border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fs-5 fw-bold text-primary">Pedido #{{ pedido.id }}</span>
+                        <span class="badge bg-secondary">{{ pedido.fecha_hora_pedido|date:"H:i A" }}</span>
+                    </div>
+                    
+                    <h5 class="card-title"><i class="fa-solid fa-user"></i> {{ pedido.cliente.username }}</h5>
+                    <p class="card-text text-muted mb-2">
+                        <i class="fa-solid fa-location-dot text-danger"></i> 
+                        <strong>Dirección:</strong> {{ pedido.direccion_delivery }}
+                    </p>
+
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <small class="d-block text-muted">A cobrar:</small>
+                            <span class="fs-4 fw-bold text-success">S/ {{ pedido.total|floatformat:2 }}</span>
+                        </div>
+                        <div class="text-end">
+                            {% if 'APROBADO' in pedido.pagos.first.estado_pago %}
+                                <span class="badge bg-success d-block mb-1">YA PAGADO (Stripe)</span>
+                                <small class="text-muted">Solo entregar</small>
+                            {% else %}
+                                <span class="badge bg-warning text-dark d-block mb-1">COBRAR AL CLIENTE</span>
+                                <small class="fw-bold">{{ pedido.pagos.first.get_metodo_pago_display_name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'pedidos:accion_pedido' pedido.id 'PAGAR_ENTREGAR' %}" 
+                           class="btn btn-success"
+                           onclick="return confirm('¿Confirmas que entregaste el pedido (y cobraste si era necesario)?');">
+                            <i class="fa-solid fa-motorcycle"></i> Marcar Entregado
+                        </a>
+                        
+                        <a href="{% url 'pedidos:accion_pedido' pedido.id 'CANCELAR' %}" 
+                           class="btn btn-outline-danger"
+                           onclick="return confirm('¿El cliente no estaba en casa? Esto cancelará el pedido y devolverá el stock.');">
+                            <i class="fa-solid fa-ban"></i> Cancelar (No Responde)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i class="fa-solid fa-route fs-1 mb-3"></i><br>
+            <h4>¡Todo limpio!</h4>
+            <p>No hay pedidos de Delivery pendientes de entrega en este momento.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
