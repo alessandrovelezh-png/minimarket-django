@@ -5,6 +5,18 @@
     <h1 class="text-success">¡Pedido Confirmado!</h1>
     <p class="lead">Tu pedido ha sido procesado exitosamente y el stock ha sido actualizado.</p>
     <p>Te esperamos en nuestro minimarket para el recojo.</p>
+    
+    <!-- NUEVO: Descarga de Comprobante PDF (Solo Recojo y Pagado Online) -->
+    {% if pedido and pedido.tipo_entrega == 'RECOJO' and 'APROBADO' in pedido.pagos.first.estado_pago %}
+        <div class="mt-4 mb-4 p-4 bg-light rounded text-center shadow-sm w-50 mx-auto">
+            <h5 class="text-success"><i class="fa-solid fa-receipt"></i> Tu comprobante está listo</h5>
+            <p class="text-muted small">Por favor, descarga y muestra este ticket al cajero al momento de recoger tu pedido.</p>
+            <a href="{% url 'pedidos:descargar_ticket' pedido.id %}" target="_blank" class="btn btn-outline-success">
+                <i class="fa-solid fa-file-pdf"></i> Descargar Comprobante PDF
+            </a>
+        </div>
+    {% endif %}
+
     <a href="{% url 'catalogo:lista_productos' %}" class="btn btn-primary mt-3">Seguir Comprando</a>
 </div>
 {% endblock %}

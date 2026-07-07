@@ -1,17 +1,18 @@
 import stripe
 import requests
 import uuid
-from datetime import datetime # <-- NUEVO
-from weasyprint import HTML # <-- NUEVO
-from django.utils import timezone # <-- NUEVO
-from django.http import HttpResponse # <-- NUEVO
-from django.template.loader import render_to_string # <-- NUEVO
+from datetime import datetime
+from weasyprint import HTML
+from django.utils import timezone
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 from django.conf import settings
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
+from django.core.mail import EmailMessage
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from apps.catalogo.models import Producto
 from .models import Pedido, DetallePedido, Pago
 from .carrito import Carrito
@@ -20,11 +21,25 @@ from .forms import CheckoutForm
 # Configuramos la clave secreta de Stripe extrayéndola de settings.py
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+# ========================================================
+# SEGURIDAD Y ROLES
+# ========================================================
+def es_cajero(user):
+    return user.is_superuser or user.groups.filter(name='Cajeros').exists()
+
+def es_repartidor(user):
+    return user.is_superuser or user.groups.filter(name='Repartidores').exists()
+
+def es_operativo(user):
+    return user.is_superuser or user.groups.filter(name__in=['Cajeros', 'Repartidores']).exists()
+
+# ========================================================
+# CARRITO DE COMPRAS
+# ========================================================
 def ver_carrito(request):
     carrito = Carrito(request)
     total_general = carrito.get_total_carrito()
     
-    # HU08: Preparamos los datos matemáticos (Subtotal) antes de enviarlos al HTML
     items_carrito = []
     for key, item in carrito.carrito.items():
         item['subtotal'] = float(item['precio']) * item['cantidad']
@@ -56,6 +71,9 @@ def eliminar_carrito(request, producto_id):
     url_origen = request.META.get('HTTP_REFERER', 'pedidos:ver_carrito')
     return redirect(url_origen)
 
+# ========================================================
+# CHECKOUT Y PROCESAMIENTO
+# ========================================================
 @login_required 
 def checkout(request):
     carrito = Carrito(request)
@@ -64,9 +82,6 @@ def checkout(request):
 
     total_general = carrito.get_total_carrito()
     
-    # ========================================================
-    # 1. API DE DÓLARES: Extraemos solo la tasa de cambio pura
-    # ========================================================
     tipo_cambio = 0
     try:
         respuesta = requests.get('https://open.er-api.com/v6/latest/PEN', timeout=5)
@@ -84,16 +99,11 @@ def checkout(request):
             tipo_entrega = form.cleaned_data['tipo_entrega']
             direccion_delivery = form.cleaned_data.get('direccion_delivery')
 
-            # ========================================================
-            # 2. VALIDACIÓN DEL HORARIO DE DELIVERY (8:00 AM a 8:00 PM)
-            # ========================================================
             if tipo_entrega == 'DELIVERY':
-                # Obtenemos la hora local configurada en Django (Lima)
                 hora_actual = timezone.localtime().time()
                 hora_apertura = datetime.strptime("08:00", "%H:%M").time()
                 hora_cierre = datetime.strptime("20:00", "%H:%M").time()
                 
-                # Si está fuera del horario, recargamos la página con un error
                 if not (hora_apertura <= hora_actual <= hora_cierre):
                     return render(request, 'pedidos/checkout.html', {
                         'form': form, 
@@ -102,15 +112,10 @@ def checkout(request):
                         'error_mensaje': 'El servicio de Delivery a domicilio solo está disponible de 8:00 AM a 8:00 PM.'
                     })
 
-            # LÓGICA DE COSTOS: + S/ 10.00 si es Delivery
             costo_envio = 10.00 if tipo_entrega == 'DELIVERY' else 0.00
             total_con_envio = float(total_general) + costo_envio
 
-            # ========================================================
-            # BIFURCACIÓN DE PAGOS
-            # ========================================================
-            
-            # --- A. FLUJO STRIPE (Tarjetas y Billeteras Globales) ---
+            # --- A. FLUJO STRIPE ---
             if metodo_seleccionado in ['STRIPE_CARD', 'STRIPE_WALLET']:
                 request.session['datos_pedido_pendiente'] = {
                     'tipo_entrega': tipo_entrega,
@@ -156,7 +161,7 @@ def checkout(request):
                         'error_mensaje': f"Error en pasarela Stripe: {str(e)}"
                     })
 
-            # --- B. FLUJO YAPE / PLIN ONLINE (Redirección a Simulación OTP) ---
+            # --- B. FLUJO YAPE / PLIN ONLINE ---
             elif metodo_seleccionado in ['LOCAL_YAPE', 'LOCAL_PLIN']:
                 try:
                     with transaction.atomic():
@@ -186,14 +191,12 @@ def checkout(request):
                         pedido.total = total_calculado + costo_envio
                         pedido.save()
 
-                        # IMPORTANTE: Queda PENDIENTE_PAGO hasta que ingrese el código
                         Pago.objects.create(
                             pedido=pedido, metodo_pago=metodo_seleccionado,
                             monto_pago=pedido.total, estado_pago='PENDIENTE_PAGO' 
                         )
                         carrito.limpiar()
                         
-                        # Lo enviamos a la pantalla de validación del código (Paso 3)
                         return redirect('pedidos:simular_billetera', pedido_id=pedido.id)
                         
                 except Exception as e:
@@ -202,7 +205,7 @@ def checkout(request):
                         'error_mensaje': str(e)
                     })
 
-            # --- C. FLUJO CONTRA ENTREGA (Físico) ---
+            # --- C. FLUJO CONTRA ENTREGA ---
             else:
                 try:
                     with transaction.atomic():
@@ -232,7 +235,6 @@ def checkout(request):
                         pedido.total = total_calculado + costo_envio
                         pedido.save()
 
-                        # En Contra Entrega, siempre queda PENDIENTE_PAGO
                         Pago.objects.create(
                             pedido=pedido, metodo_pago=metodo_seleccionado,
                             monto_pago=pedido.total, estado_pago='PENDIENTE_PAGO',
@@ -257,12 +259,10 @@ def checkout(request):
     })
 
 # ========================================================
-# NUEVAS VISTAS: MANEJO DEL RETORNO DE STRIPE
+# RESPUESTAS STRIPE Y EXITO
 # ========================================================
-
 @login_required
 def stripe_success(request):
-    """Se ejecuta si el cliente paga con éxito en Stripe"""
     carrito = Carrito(request)
     datos_pedido = request.session.get('datos_pedido_pendiente')
 
@@ -271,7 +271,6 @@ def stripe_success(request):
 
     try:
         with transaction.atomic():
-            # 1. Crear el Pedido con todos los datos logísticos de la sesión
             pedido = Pedido.objects.create(
                 cliente=request.user,
                 estado='PENDIENTE',
@@ -284,7 +283,6 @@ def stripe_success(request):
 
             total_calculado = 0
             
-            # 2. Procesar ítems y descontar existencias (Defensivo)
             for key, item in carrito.carrito.items():
                 producto = Producto.objects.select_for_update().get(id=item['producto_id'])
                 cantidad_comprada = item['cantidad']
@@ -302,11 +300,9 @@ def stripe_success(request):
                 )
                 total_calculado += (precio_unitario * cantidad_comprada)
 
-            # Sumamos el costo de delivery al total guardado
             pedido.total = total_calculado + float(datos_pedido['costo_delivery'])
             pedido.save()
 
-            # 3. Registrar el pago como REAL y APROBADO
             Pago.objects.create(
                 pedido=pedido,
                 metodo_pago=datos_pedido['metodo_pago'],
@@ -315,7 +311,6 @@ def stripe_success(request):
                 referencia_transaccion=f"STRIPE-{uuid.uuid4().hex[:15].upper()}"
             )
 
-            # 4. Limpiar los datos temporales y vaciar el carrito
             request.session['carrito'] = {}
             del request.session['datos_pedido_pendiente']
             if 'carrito_ultima_actividad' in request.session:
@@ -332,7 +327,6 @@ def stripe_success(request):
 
 @login_required
 def stripe_cancel(request):
-    """Se ejecuta si el cliente cancela o cierra la ventana de Stripe"""
     carrito = Carrito(request)
     total_general = carrito.get_total_carrito()
     
@@ -346,11 +340,15 @@ def stripe_cancel(request):
         'error_mensaje': "Se canceló el pago con tarjeta. Puedes intentar nuevamente o usar otro método."
     })
 
-
+@login_required
 def pedido_exitoso(request):
-    return render(request, 'pedidos/exito.html')
+    # Recupera el último pedido del cliente para habilitar la descarga del PDF si corresponde
+    pedido = Pedido.objects.filter(cliente=request.user).order_by('-id').first()
+    return render(request, 'pedidos/exito.html', {'pedido': pedido})
 
-# --- 1. SIMULACIÓN YAPE / PLIN ---
+# ========================================================
+# PANELES OPERATIVOS Y SIMULACIONES
+# ========================================================
 @login_required
 def simular_billetera(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id, cliente=request.user)
@@ -359,7 +357,6 @@ def simular_billetera(request, pedido_id):
     if request.method == 'POST':
         codigo = request.POST.get('codigo_otp')
         if codigo and len(codigo) == 6:
-            # Simulación de éxito
             pago.estado_pago = 'APROBADO_SIMULADO'
             pago.referencia_transaccion = f"OTP-{uuid.uuid4().hex[:6].upper()}"
             pago.save()
@@ -369,31 +366,30 @@ def simular_billetera(request, pedido_id):
             
     return render(request, 'pedidos/billetera.html', {'pedido': pedido, 'pago': pago})
 
-# --- 2. PANELES OPERATIVOS ---
 @login_required
+@user_passes_test(es_cajero, login_url='/')
 def panel_cajero(request):
-    # Pedidos de RECOJO que no están entregados ni cancelados
     pedidos = Pedido.objects.filter(tipo_entrega='RECOJO').exclude(estado__in=['ENTREGADO', 'CANCELADO']).order_by('-fecha_hora_pedido')
     return render(request, 'pedidos/panel_cajero.html', {'pedidos': pedidos})
 
 @login_required
+@user_passes_test(es_repartidor, login_url='/')
 def panel_repartidor(request):
-    # Pedidos de DELIVERY
     pedidos = Pedido.objects.filter(tipo_entrega='DELIVERY').exclude(estado__in=['ENTREGADO', 'CANCELADO']).order_by('-fecha_hora_pedido')
     return render(request, 'pedidos/panel_repartidor.html', {'pedidos': pedidos})
 
-# --- 3. ACCIONES OPERATIVAS (PAGAR / CANCELAR) ---
 @login_required
+@user_passes_test(es_operativo, login_url='/')
 def accion_pedido(request, pedido_id, accion):
     pedido = get_object_or_404(Pedido, id=pedido_id)
     pago = pedido.pagos.first()
     
     with transaction.atomic():
         if accion == 'CANCELAR':
-            # REVERSIÓN DE INVENTARIO
+            # Reversión de inventario para ambos roles
             for detalle in pedido.detalles.all():
                 producto = detalle.producto
-                producto.stock += detalle.cantidad  # Devuelve los productos a las góndolas
+                producto.stock += detalle.cantidad
                 producto.save()
             
             pedido.estado = 'CANCELADO'
@@ -409,30 +405,44 @@ def accion_pedido(request, pedido_id, accion):
                 pago.save()
             pedido.save()
             
-    return redirect(request.META.get('HTTP_REFERER', 'catalogo:lista_productos'))
+            # Envío automático de boleta por correo (Solo Delivery)
+            if pedido.tipo_entrega == 'DELIVERY' and pedido.cliente.email:
+                try:
+                    html_string = render_to_string('pedidos/ticket_pdf.html', {'pedido': pedido, 'pago': pago})
+                    pdf_file = HTML(string=html_string).write_pdf()
+                    
+                    email = EmailMessage(
+                        subject=f'Comprobante de Pago - Pedido #{pedido.id}',
+                        body='Gracias por tu compra. Adjuntamos tu comprobante de pago electrónico en PDF.',
+                        from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'ventas@minimarket.com',
+                        to=[pedido.cliente.email]
+                    )
+                    email.attach(f'Comprobante_Pedido_{pedido.id}.pdf', pdf_file, 'application/pdf')
+                    email.send(fail_silently=True)
+                except Exception as e:
+                    print(f"Alerta interna - Error al generar o enviar PDF por correo: {e}")
+            
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 '''
+# Código final para generar Ticket desde la tienda (Cajero o Cliente en Recojo)
 @login_required
 def descargar_ticket(request, pedido_id):
-    pedido = get_object_or_404(Pedido, id=pedido_id, cliente=request.user)
+    pedido = get_object_or_404(Pedido, id=pedido_id)
     pago = pedido.pagos.first()
     
-    # Validamos que solo los pedidos realmente pagados generen comprobante
     if not pago or 'APROBADO' not in pago.estado_pago:
-        return HttpResponse("El comprobante aún no está disponible porque el pedido no ha sido pagado.", status=403)
+        return HttpResponse("El comprobante aún no está disponible.", status=403)
     
-    # Renderiza la plantilla HTML a un string
     html_string = render_to_string('pedidos/ticket_pdf.html', {'pedido': pedido, 'pago': pago})
-    
-    # Convierte a PDF
     pdf_file = HTML(string=html_string).write_pdf()
     
-    # Configura la respuesta de descarga
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="Ticket-Venta-{pedido.id}.pdf"'
     return response
 '''
+
+# Dejado por motivos de prueba si aún no activas WeasyPrint localmente
 @login_required
 def descargar_ticket(request, pedido_id):
-    # Función base (Descomenta la lógica de WeasyPrint cuando esté habilitada localmente)
     return HttpResponse("Visualización de comprobante. Función reservada para WeasyPrint.")

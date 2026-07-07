@@ -30,30 +30,30 @@ class CheckoutForm(forms.ModelForm):
         hora_noche = datetime.time(16, 0)
         hora_cierre = datetime.time(20, 0)
         
-        opciones = []
+        # Filtra las horas que ya pasaron el día de hoy
         if hora_actual < hora_tarde:
             opciones = [
-                ('HOY_MAÑANA', 'Hoy - Mañana (8:00 AM - 12:00 PM)'),
-                ('HOY_TARDE', 'Hoy - Tarde (12:00 PM - 4:00 PM)'),
-                ('HOY_NOCHE', 'Hoy - Noche (4:00 PM - 8:00 PM)')
+                ('HOY_MAÑANA', 'Hoy (8:00 AM - 12:00 PM)'),
+                ('HOY_TARDE', 'Hoy (12:00 PM - 4:00 PM)'),
+                ('HOY_NOCHE', 'Hoy (4:00 PM - 8:00 PM)')
             ]
         elif hora_tarde <= hora_actual < hora_noche:
             opciones = [
-                ('HOY_TARDE', 'Hoy - Tarde (12:00 PM - 4:00 PM)'),
-                ('HOY_NOCHE', 'Hoy - Noche (4:00 PM - 8:00 PM)'),
-                ('MAN_MAÑANA', 'Mañana - Mañana (8:00 AM - 12:00 PM)')
+                ('HOY_TARDE', 'Hoy (12:00 PM - 4:00 PM)'),
+                ('HOY_NOCHE', 'Hoy (4:00 PM - 8:00 PM)'),
+                ('MAN_MAÑANA', 'Mañana (8:00 AM - 12:00 PM)')
             ]
         elif hora_noche <= hora_actual < hora_cierre:
             opciones = [
-                ('HOY_NOCHE', 'Hoy - Noche (4:00 PM - 8:00 PM)'),
-                ('MAN_MAÑANA', 'Mañana - Mañana (8:00 AM - 12:00 PM)'),
-                ('MAN_TARDE', 'Mañana - Tarde (12:00 PM - 4:00 PM)')
+                ('HOY_NOCHE', 'Hoy (4:00 PM - 8:00 PM)'),
+                ('MAN_MAÑANA', 'Mañana (8:00 AM - 12:00 PM)'),
+                ('MAN_TARDE', 'Mañana (12:00 PM - 4:00 PM)')
             ]
         else:
             opciones = [
-                ('MAN_MAÑANA', 'Mañana - Mañana (8:00 AM - 12:00 PM)'),
-                ('MAN_TARDE', 'Mañana - Tarde (12:00 PM - 4:00 PM)'),
-                ('MAN_NOCHE', 'Mañana - Noche (4:00 PM - 8:00 PM)')
+                ('MAN_MAÑANA', 'Mañana (8:00 AM - 12:00 PM)'),
+                ('MAN_TARDE', 'Mañana (12:00 PM - 4:00 PM)'),
+                ('MAN_NOCHE', 'Mañana (4:00 PM - 8:00 PM)')
             ]
             
         self.fields['franja_recojo'].choices = opciones

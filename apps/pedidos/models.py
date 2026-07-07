@@ -22,12 +22,12 @@ class Pedido(models.Model):
     ]
     
     OPCIONES_FRANJA = [
-        ('HOY_MAÑANA', 'Hoy - Mañana (8:00 AM - 12:00 PM)'),
-        ('HOY_TARDE', 'Hoy - Tarde (12:00 PM - 4:00 PM)'),
-        ('HOY_NOCHE', 'Hoy - Noche (4:00 PM - 8:00 PM)'),
-        ('MAN_MAÑANA', 'Mañana - Mañana (8:00 AM - 12:00 PM)'),
-        ('MAN_TARDE', 'Mañana - Tarde (12:00 PM - 4:00 PM)'),
-        ('MAN_NOCHE', 'Mañana - Noche (4:00 PM - 8:00 PM)'),
+        ('HOY_MAÑANA', 'Hoy (8:00 AM - 12:00 PM)'),
+        ('HOY_TARDE', 'Hoy (12:00 PM - 4:00 PM)'),
+        ('HOY_NOCHE', 'Hoy (4:00 PM - 8:00 PM)'),
+        ('MAN_MAÑANA', 'Mañana (8:00 AM - 12:00 PM)'),
+        ('MAN_TARDE', 'Mañana (12:00 PM - 4:00 PM)'),
+        ('MAN_NOCHE', 'Mañana (4:00 PM - 8:00 PM)'),
     ]
 
     # NUEVO: Modalidades de entrega
