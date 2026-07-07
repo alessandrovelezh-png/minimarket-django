@@ -424,7 +424,6 @@ def accion_pedido(request, pedido_id, accion):
             
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
-'''
 # Código final para generar Ticket desde la tienda (Cajero o Cliente en Recojo)
 @login_required
 def descargar_ticket(request, pedido_id):
@@ -440,9 +439,3 @@ def descargar_ticket(request, pedido_id):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="Ticket-Venta-{pedido.id}.pdf"'
     return response
-'''
-
-# Dejado por motivos de prueba si aún no activas WeasyPrint localmente
-@login_required
-def descargar_ticket(request, pedido_id):
-    return HttpResponse("Visualización de comprobante. Función reservada para WeasyPrint.")
