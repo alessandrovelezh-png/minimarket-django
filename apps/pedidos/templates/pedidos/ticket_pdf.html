@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de Pedido #{{ pedido.id }}</title>
+    <style>
+        body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            font-size: 14px; 
+            color: #333; 
+            margin: 0;
+            padding: 20px;
+        }
+        .ticket-container { 
+            width: 100%; 
+            max-width: 700px; 
+            margin: 0 auto; 
+            border: 1px solid #ddd;
+            padding: 30px;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 2px dashed #000; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+        }
+        .header h1 { margin: 0; color: #2c3e50; font-size: 28px; }
+        .header p { margin: 5px 0 0 0; color: #7f8c8d; }
+        
+        .info-table { width: 100%; margin-bottom: 30px; }
+        .info-table td { padding: 5px 0; }
+        
+        .items-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 30px; 
+        }
+        .items-table th, .items-table td { 
+            border-bottom: 1px solid #eee; 
+            padding: 10px; 
+            text-align: left; 
+        }
+        .items-table th { 
+            background-color: #f8f9fa; 
+            font-weight: bold;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .totals { 
+            text-align: right; 
+            font-size: 15px; 
+        }
+        .total-final {
+            font-size: 20px;
+            font-weight: bold;
+            color: #27ae60;
+            border-top: 2px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .footer { 
+            text-align: center; 
+            margin-top: 40px; 
+            font-size: 12px; 
+            color: #95a5a6; 
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket-container">
+        <div class="header">
+            <h1>MINIMARKET</h1>
+            <p>Comprobante de Pago Electrónico</p>
+        </div>
+
+        <table class="info-table">
+            <tr>
+                <td><strong>Pedido N°:</strong> {{ pedido.id }}</td>
+                <td style="text-align: right;"><strong>Fecha:</strong> {{ pedido.fecha_hora_pedido|date:"d/m/Y H:i" }}</td>
+            </tr>
+            <tr>
+                <td><strong>Cliente:</strong> {{ pedido.cliente.username|title }}</td>
+                <td style="text-align: right;"><strong>Estado:</strong> {{ pago.estado_pago }}</td>
+            </tr>
+            <tr>
+                <td><strong>Método de Pago:</strong> {{ pago.get_metodo_pago_display }}</td>
+                <td style="text-align: right;"><strong>Entrega:</strong> {{ pedido.get_tipo_entrega_display }}</td>
+            </tr>
+        </table>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th style="text-align: right;">P. Unitario</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in pedido.detalles.all %}
+                <tr>
+                    <td>{{ detalle.producto.nombre }}</td>
+                    <td>{{ detalle.cantidad }}</td>
+                    <td style="text-align: right;">S/ {{ detalle.precio_unitario_historico }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <p><strong>Subtotal de Productos:</strong> S/ {{ pedido.total|add:"-"|add:pedido.costo_delivery }}</p>
+            <p><strong>Costo de Envío:</strong> S/ {{ pedido.costo_delivery }}</p>
+            <div class="total-final">
+                TOTAL PAGADO: S/ {{ pedido.total }}
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>¡Gracias por tu preferencia!</p>
+            <p>Este comprobante tiene validez para el recojo de sus productos.</p>
+            <p>Ref: {{ pago.referencia_transaccion|default:"N/A" }}</p>
+        </div>
+    </div>
+</body>
+</html>
