@@ -411,6 +411,7 @@ def accion_pedido(request, pedido_id, accion):
             
     return redirect(request.META.get('HTTP_REFERER', 'catalogo:lista_productos'))
 
+'''
 @login_required
 def descargar_ticket(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id, cliente=request.user)
@@ -430,3 +431,8 @@ def descargar_ticket(request, pedido_id):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="Ticket-Venta-{pedido.id}.pdf"'
     return response
+'''
+@login_required
+def descargar_ticket(request, pedido_id):
+    # Función base (Descomenta la lógica de WeasyPrint cuando esté habilitada localmente)
+    return HttpResponse("Visualización de comprobante. Función reservada para WeasyPrint.")

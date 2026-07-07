@@ -12,6 +12,13 @@
             <a class="navbar-brand" href="{% url 'catalogo:lista_productos' %}">Minimarket</a>
             
             <div class="d-flex align-items-center gap-3">
+                
+                <!-- BOTONES DE PANELES OPERATIVOS (Solo para empleados) -->
+                {% if user.is_staff %}
+                    <a href="{% url 'pedidos:panel_cajero' %}" class="btn btn-outline-warning btn-sm">🏪 Panel Cajero</a>
+                    <a href="{% url 'pedidos:panel_repartidor' %}" class="btn btn-outline-info btn-sm">🛵 Panel Repartidor</a>
+                {% endif %}
+
                 <a href="{% url 'pedidos:ver_carrito' %}" class="btn btn-outline-light">🛒 Ver Carrito</a>
                 
                 {% if user.is_authenticated %}
