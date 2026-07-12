@@ -16,22 +16,27 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from apps.pedidos import api_views as pedidos_api # Importamos tu archivo de vistas API
 from django.conf import settings
 from django.conf.urls.static import static
 
+# Importamos directamente las vistas de la API
+from apps.catalogo import api_views as catalogo_api
+from apps.pedidos import api_views as pedidos_api
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('pedidos/', include('apps.pedidos.urls')), 
-    path('', include('apps.catalogo.urls')),
-    path('usuarios/', include('apps.usuarios.urls')), 
     
-    # === RUTAS API GLOBALES ===
-    # Lo mapeamos directamente en la raíz para que no sufra por el prefijo 'pedidos/'
-    path('api/carrito/', pedidos_api.api_carrito, name='api_carrito_global'),
-    path('api/checkout/', pedidos_api.api_checkout, name='api_checkout_global'),
+    # Rutas Web Tradicionales (HTML)
+    path('', include('apps.catalogo.urls')),
+    path('pedidos/', include('apps.pedidos.urls')),
+    path('usuarios/', include('apps.usuarios.urls')),
+    
+    # Rutas API REST Framework (JSON)
+    path('api/productos/', catalogo_api.lista_productos_api, name='api_productos'),
+    path('api/productos/<int:producto_id>/', catalogo_api.api_detalle_producto, name='api_detalle_producto'),
+    path('api/carrito/', pedidos_api.api_carrito, name='api_carrito'),
+    path('api/checkout/', pedidos_api.api_checkout, name='api_checkout'),
 ]
 
-# Esto es vital para que las imágenes de los productos se vean en desarrollo
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -12,4 +12,4 @@ class ProductoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Producto
         # Incluimos los campos relevantes, incluyendo el stock disponible real
-        fields = ['id', 'nombre', 'descripcion', 'precio', 'stock_disponible', 'categoria_nombre', 'disponible']
+        fields = ['id', 'nombre', 'precio', 'stock', 'stock_reservado', 'categoria_nombre', 'disponible']
