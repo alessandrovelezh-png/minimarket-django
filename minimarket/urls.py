@@ -32,7 +32,7 @@ urlpatterns = [
     path('usuarios/', include('apps.usuarios.urls')),
     
     # Rutas API REST Framework (JSON)
-    path('api/productos/', catalogo_api.lista_productos_api, name='api_productos'),
+    path('api/productos/', catalogo_api.api_lista_productos, name='api_productos'),
     path('api/productos/<int:producto_id>/', catalogo_api.api_detalle_producto, name='api_detalle_producto'),
     path('api/carrito/', pedidos_api.api_carrito, name='api_carrito'),
     path('api/checkout/', pedidos_api.api_checkout, name='api_checkout'),
